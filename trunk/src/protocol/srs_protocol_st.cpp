@@ -6,10 +6,18 @@
 
 #include <srs_protocol_st.hpp>
 
+#ifndef _WIN32
 #include <st.h>
+#else
+#include <win_st.h>
+#endif
 #include <fcntl.h>
+#ifndef _WIN32
+#include <st.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#else
+#endif
 using namespace std;
 
 #include <srs_core_autofree.hpp>
@@ -91,22 +99,29 @@ void srs_close_stfd(srs_netfd_t& stfd)
 
 srs_error_t srs_fd_closeexec(int fd)
 {
+#ifndef _WIN32
     int flags = fcntl(fd, F_GETFD);
     flags |= FD_CLOEXEC;
     if (fcntl(fd, F_SETFD, flags) == -1) {
         return srs_error_new(ERROR_SOCKET_SETCLOSEEXEC, "FD_CLOEXEC fd=%d", fd);
     }
-
+#endif // !_WIN32
+    //todo tan
     return srs_success;
 }
 
 srs_error_t srs_fd_reuseaddr(int fd)
 {
     int v = 1;
+#ifndef _WIN32
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &v, sizeof(int)) == -1) {
         return srs_error_new(ERROR_SOCKET_SETREUSEADDR, "SO_REUSEADDR fd=%d", fd);
     }
-
+#else
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&v, sizeof(int)) == -1) {
+        return srs_error_new(ERROR_SOCKET_SETREUSEADDR, "SO_REUSEADDR fd=%d", fd);
+    }
+#endif
     return srs_success;
 }
 
@@ -118,7 +133,7 @@ srs_error_t srs_fd_reuseport(int fd)
         srs_warn("SO_REUSEPORT failed for fd=%d", fd);
     }
 #else
-    #warning "SO_REUSEPORT is not supported by your OS"
+//    #warning "SO_REUSEPORT is not supported by your OS"
     srs_warn("SO_REUSEPORT is not supported util Linux kernel 3.9");
 #endif
 
@@ -129,9 +144,17 @@ srs_error_t srs_fd_keepalive(int fd)
 {
 #ifdef SO_KEEPALIVE
     int v = 1;
+#ifndef _WIN32
     if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &v, sizeof(int)) == -1) {
         return srs_error_new(ERROR_SOCKET_SETKEEPALIVE, "SO_KEEPALIVE fd=%d", fd);
     }
+#else
+    if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (const char*)&v, sizeof(int)) == -1) {
+        return srs_error_new(ERROR_SOCKET_SETKEEPALIVE, "SO_KEEPALIVE fd=%d", fd);
+    }
+#endif // _WIN32
+
+
 #endif
 
     return srs_success;

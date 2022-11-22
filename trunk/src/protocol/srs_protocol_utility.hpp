@@ -20,7 +20,10 @@
 
 #include <srs_kernel_consts.hpp>
 
+#ifndef _WIN32
 #include <arpa/inet.h>
+#else
+#endif
 #include <string>
 #include <vector>
 

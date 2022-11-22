@@ -7,8 +7,11 @@
 #include <srs_protocol_log.hpp>
 
 #include <stdarg.h>
+#ifndef _WIN32
 #include <sys/time.h>
 #include <unistd.h>
+#else
+#endif // DEBUG
 #include <sstream>
 using namespace std;
 

@@ -13,6 +13,11 @@
 #include <srs_app_rtc_source.hpp>
 #include <srs_app_source.hpp>
 #include <srs_app_pithy_print.hpp>
+#ifndef _WIN32
+#include <srs_app_rtc_server.hpp>
+#else
+#endif // !_WIN32
+
 #include <srs_app_rtc_server.hpp>
 #include <srs_app_log.hpp>
 #include <srs_app_async_call.hpp>
@@ -32,8 +37,11 @@
 #include <stdlib.h>
 #include <string>
 using namespace std;
-
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#endif // !_WIN32
+
 #include <fcntl.h>
 
 #ifdef SRS_OSX
@@ -527,7 +535,7 @@ SrsThreadPool::SrsThreadPool()
     entry->arg = NULL;
     entry->num = 1;
     entry->trd = pthread_self();
-    entry->tid = gettid();
+    entry->tid = ::gettid();
 
     char buf[256];
     snprintf(buf, sizeof(buf), "srs-master-%d", entry->num);
@@ -584,7 +592,11 @@ srs_error_t SrsThreadPool::acquire_pid_file()
 
     // -rw-r--r--
     // 644
-    int mode = S_IRUSR | S_IWUSR |  S_IRGRP | S_IROTH;
+#ifndef _WIN32
+    mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
+#else
+    int mode = _S_IREAD | _S_IWRITE;
+#endif
 
     int fd;
     // open pid file
@@ -592,6 +604,7 @@ srs_error_t SrsThreadPool::acquire_pid_file()
         return srs_error_new(ERROR_SYSTEM_PID_ACQUIRE, "open pid file=%s", pid_file.c_str());
     }
 
+#ifndef _WIN32
     // require write lock
     struct flock lock;
 
@@ -601,7 +614,7 @@ srs_error_t SrsThreadPool::acquire_pid_file()
     lock.l_len = 0;
 
     if (fcntl(fd, F_SETLK, &lock) == -1) {
-        if(errno == EACCES || errno == EAGAIN) {
+        if (errno == EACCES || errno == EAGAIN) {
             ::close(fd);
             srs_error("srs is already running!");
             return srs_error_new(ERROR_SYSTEM_PID_ALREADY_RUNNING, "srs is already running");
@@ -613,6 +626,7 @@ srs_error_t SrsThreadPool::acquire_pid_file()
     if (ftruncate(fd, 0) != 0) {
         return srs_error_new(ERROR_SYSTEM_PID_TRUNCATE_FILE, "truncate pid file=%s", pid_file.c_str());
     }
+#endif
 
     // write the pid
     string pid = srs_int2str(getpid());
@@ -620,6 +634,7 @@ srs_error_t SrsThreadPool::acquire_pid_file()
         return srs_error_new(ERROR_SYSTEM_PID_WRITE_FILE, "write pid=%s to file=%s", pid.c_str(), pid_file.c_str());
     }
 
+#ifndef _WIN32
     // auto close when fork child process.
     int val;
     if ((val = fcntl(fd, F_GETFD, 0)) < 0) {
@@ -629,6 +644,7 @@ srs_error_t SrsThreadPool::acquire_pid_file()
     if (fcntl(fd, F_SETFD, val) < 0) {
         return srs_error_new(ERROR_SYSTEM_PID_SET_FILE_INFO, "lock file=%s fd=%d", pid_file.c_str(), fd);
     }
+#endif
 
     srs_trace("write pid=%s to %s success!", pid.c_str(), pid_file.c_str());
     pid_fd = fd;
@@ -743,7 +759,11 @@ SrsThreadEntry* SrsThreadPool::self()
 
     for (int i = 0; i < (int)threads.size(); i++) {
         SrsThreadEntry* entry = threads.at(i);
+#ifndef _WIN32
         if (entry->trd == pthread_self()) {
+#else
+        if (entry->trd.p == pthread_self().p) {
+#endif // _WIN32
             return entry;
         }
     }
@@ -777,8 +797,10 @@ void* SrsThreadPool::start(void* arg)
     entry->tid = gettid();
 
 #ifndef SRS_OSX
+#ifndef _WIN32
     // https://man7.org/linux/man-pages/man3/pthread_setname_np.3.html
     pthread_setname_np(pthread_self(), entry->name.c_str());
+#endif // !1
 #else
     pthread_setname_np(entry->name.c_str());
 #endif

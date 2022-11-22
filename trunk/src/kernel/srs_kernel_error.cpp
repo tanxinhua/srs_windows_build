@@ -11,7 +11,15 @@
 #include <errno.h>
 #include <sstream>
 #include <stdarg.h>
+
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#include <winerror.h>
+#include <process.h>
+#define getpid _getpid
+#endif // _WIN32
+
 #include <assert.h>
 
 #include <map>

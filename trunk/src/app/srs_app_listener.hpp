@@ -9,8 +9,11 @@
 
 #include <srs_core.hpp>
 
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
+#else
+#endif
 
 #include <map>
 #include <string>

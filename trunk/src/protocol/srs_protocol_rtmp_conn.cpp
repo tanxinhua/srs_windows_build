@@ -6,7 +6,10 @@
 
 #include <srs_protocol_rtmp_conn.hpp>
 
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#endif
 using namespace std;
 
 #include <srs_protocol_kbps.hpp>

@@ -6,7 +6,10 @@
 
 #include <srs_protocol_http_client.hpp>
 
+#ifndef _WIN32
 #include <arpa/inet.h>
+#else
+#endif
 #include <sstream>
 using namespace std;
 

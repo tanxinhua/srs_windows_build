@@ -8,9 +8,10 @@
 
 #ifndef _WIN32
 #include <unistd.h>
+#include <arpa/inet.h>
+#else
 #endif
 
-#include <arpa/inet.h>
 #include <stdlib.h>
 #include <sstream>
 using namespace std;
@@ -24,11 +25,15 @@ using namespace std;
 #include <srs_protocol_rtmp_stack.hpp>
 #include <srs_protocol_io.hpp>
 
+#ifndef _WIN32
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <net/if.h>
 #include <ifaddrs.h>
 #include <netdb.h>
+#else
+#endif
+
 #include <math.h>
 #include <stdlib.h>
 #include <map>
@@ -164,16 +169,29 @@ std::string srs_random_str(int len)
     return ret;
 }
 
+#ifndef _WIN32 
 long srs_random()
 {
     static bool _random_initialized = false;
     if (!_random_initialized) {
         _random_initialized = true;
-        ::srandom((unsigned long)(srs_update_system_time() | (::getpid()<<13)));
+        ::srandom((unsigned long)(srs_update_system_time() | (::getpid() << 13)));
     }
 
     return random();
 }
+#else
+long srs_random()
+{
+    static bool _random_initialized = false;
+    if (!_random_initialized) {
+        _random_initialized = true;
+        ::srand((unsigned long)(srs_update_system_time() | (::getpid() << 13)));
+    }
+
+    return rand();
+}
+#endif // 
 
 string srs_generate_tc_url(string schema, string host, string vhost, string app, int port)
 {
@@ -665,21 +683,21 @@ bool srs_net_device_is_internet(const sockaddr* addr)
 }
 
 vector<SrsIPAddress*> _srs_system_ips;
-
+#ifndef _WIN32 
 void discover_network_iface(ifaddrs* cur, vector<SrsIPAddress*>& ips, stringstream& ss0, stringstream& ss1, bool ipv6, bool loopback)
 {
     char saddr[64];
     char* h = (char*)saddr;
     socklen_t nbh = (socklen_t)sizeof(saddr);
     const int r0 = getnameinfo(cur->ifa_addr, sizeof(sockaddr_storage), h, nbh, NULL, 0, NI_NUMERICHOST);
-    if(r0) {
+    if (r0) {
         srs_warn("convert local ip failed: %s", gai_strerror(r0));
         return;
     }
 
     std::string ip(saddr, strlen(saddr));
-    ss0 << ", iface[" << (int)ips.size() << "] " << cur->ifa_name << " " << (ipv6? "ipv6":"ipv4")
-        << " 0x" << std::hex << cur->ifa_flags  << std::dec << " " << ip;
+    ss0 << ", iface[" << (int)ips.size() << "] " << cur->ifa_name << " " << (ipv6 ? "ipv6" : "ipv4")
+        << " 0x" << std::hex << cur->ifa_flags << std::dec << " " << ip;
 
     SrsIPAddress* ip_address = new SrsIPAddress();
     ip_address->ip = ip;
@@ -693,7 +711,8 @@ void discover_network_iface(ifaddrs* cur, vector<SrsIPAddress*>& ips, stringstre
     if (!ip_address->is_internet) {
         ss1 << ", intranet ";
         _srs_device_ifs[cur->ifa_name] = false;
-    } else {
+    }
+    else {
         ss1 << ", internet ";
         _srs_device_ifs[cur->ifa_name] = true;
     }
@@ -795,7 +814,12 @@ void retrieve_local_ips()
 
     freeifaddrs(ifap);
 }
+#else
+//todo tan
+void retrieve_local_ips() {
 
+}
+#endif
 vector<SrsIPAddress*>& srs_get_local_ips()
 {
     if (_srs_system_ips.empty()) {

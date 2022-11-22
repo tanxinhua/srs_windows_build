@@ -26,6 +26,29 @@
 // For srs-librtmp, @see https://github.com/ossrs/srs/issues/213
 #ifndef _WIN32
 #include <inttypes.h>
+#else
+#include <stdint.h>
+#include <basetsd.h>
+#include <inttypes.h>
+#include <Winsock2.h>
+#pragma comment(lib, "ws2_32.lib")
+#include <winerror.h>
+#include <process.h>
+#define getpid _getpid
+#define gettid GetCurrentThreadId
+typedef SSIZE_T ssize_t;
+#include <time.h>
+#include <windows.h>
+#include <direct.h>
+#include <io.h>
+#include <WS2tcpip.h>
+int gettimeofday(struct timeval* tp, void* tzp);
+
+struct tm* gmtime_r(const long* timer, struct tm* buf);
+struct tm* localtime_r(const long* timer, struct tm* buf);
+typedef uint8_t u_int8_t;
+typedef uint16_t u_int16_t;
+typedef uint32_t u_int32_t;
 #endif
 
 #include <stddef.h>

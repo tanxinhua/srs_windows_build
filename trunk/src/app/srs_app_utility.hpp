@@ -14,8 +14,12 @@
 #include <sstream>
 
 #include <limits.h>
+
+#ifndef _WIN32
 #include <arpa/inet.h>
 #include <sys/resource.h>
+#else
+#endif
 
 #include <srs_app_st.hpp>
 #include <srs_kernel_log.hpp>
@@ -66,8 +70,10 @@ public:
     int64_t sample_time;
     
 public:
+#ifndef _WIN32
     rusage r;
-    
+#else
+#endif    
 public:
     SrsRusage();
 };

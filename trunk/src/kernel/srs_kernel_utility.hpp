@@ -160,7 +160,11 @@ extern int srs_chunk_header_c0(int perfer_cid, uint32_t timestamp, int32_t paylo
 extern int srs_chunk_header_c3(int perfer_cid, uint32_t timestamp, char* cache, int nb_cache);
 
 // For utest to mock it.
+#ifndef _WIN32
 #include <sys/time.h>
+#else
+#endif // DEBUG
+
 #ifdef SRS_OSX
     #define _srs_gettimeofday gettimeofday
 #else

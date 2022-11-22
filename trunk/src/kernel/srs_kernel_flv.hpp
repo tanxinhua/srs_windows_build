@@ -15,6 +15,8 @@
 // For srs-librtmp, @see https://github.com/ossrs/srs/issues/213
 #ifndef _WIN32
 #include <sys/uio.h>
+#else
+typedef struct iovec iovec;
 #endif
 
 class SrsBuffer;

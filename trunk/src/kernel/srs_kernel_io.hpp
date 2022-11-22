@@ -12,6 +12,12 @@
 // for srs-librtmp, @see https://github.com/ossrs/srs/issues/213
 #ifndef _WIN32
 #include <sys/uio.h>
+#else
+typedef struct iovec
+{
+    void* iov_base;  /* Base address of a memory region for input or output */
+    size_t	 iov_len;   /* The size of the memory pointed to by iov_base */
+} iovec;
 #endif
 
 /**

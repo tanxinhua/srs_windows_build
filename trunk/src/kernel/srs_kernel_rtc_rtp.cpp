@@ -6,7 +6,10 @@
 
 #include <srs_kernel_rtc_rtp.hpp>
 
+#ifndef _WIN32
 #include <arpa/inet.h>
+#else
+#endif
 #include <fcntl.h>
 #include <sstream>
 using namespace std;
